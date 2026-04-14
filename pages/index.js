@@ -12,7 +12,7 @@ export default function Home({ posts }) {
         {/* --- Header Section --- */}
         <header className="mb-20">
           <div className="flex justify-between items-baseline mb-2">
-            <h1 className="text-3xl font-bold tracking-tighter text-white font-mono italic">Eric T.</h1>
+            <h1 className="text-3xl font-bold tracking-tighter text-white font-mono italic">Eric K.</h1>
             <span className="text-[10px] font-mono text-slate-500 tracking-widest uppercase">📍 Baton Rouge, LA</span>
           </div>
           
