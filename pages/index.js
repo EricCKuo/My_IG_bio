@@ -12,7 +12,6 @@ export default function Home({ posts }) {
         {/* --- Header Section --- */}
         <header className="mb-20">
           <div className="flex justify-between items-baseline mb-2">
-            {/* 這裡設定點擊名字跳轉到你的 Notion 個人頁面 */}
             <a href="https://www.notion.so/342028cc25a180cb8648f42782219809" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-500 transition-colors">
               <h1 className="text-3xl font-bold tracking-tighter text-white font-mono italic">Eric K.</h1>
             </a>
@@ -23,7 +22,7 @@ export default function Home({ posts }) {
             PhD Student & Research Assistant
           </p>
           
-          <div className="space-y-6 text-slate-400 leading-relaxed text-[13px] sm:text-sm">
+          <div className="space-y-6 text-slate-400 leading-relaxed text-[13px] sm:text-sm text-justify">
             <p>
               Welcome to my digital space. I am Eric, a PhD Student and a Research Assistant. 
               My daily life is defined by the intersection of <span className="text-slate-200">high-performance computing (HPC)</span> queues and complex <span className="text-slate-200">hydrogeological systems</span>.
@@ -34,16 +33,16 @@ export default function Home({ posts }) {
               where I leverage computational simulation and Python-based automation to bridge the gap between raw lithological data and actionable insights.
             </p>
 
-            <div className="py-2 flex items-center gap-2 text-[10px] font-mono text-emerald-500/80 uppercase tracking-tighter">
+            <div className="py-2 flex flex-wrap items-center gap-2 text-[10px] font-mono text-emerald-500/80 uppercase tracking-tighter">
               <span className="text-slate-600">🛠️ Stack:</span>
               <span className="px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5">Hydrogeology</span>
               <span className="px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5">Python</span>
-              <span className="px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5">Simulation</span>
+              <span className="px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5">Computational Simulation</span>
             </div>
 
             <p className="text-slate-500 italic border-l-2 border-slate-800 pl-4 py-1">
               While my days are spent deciphering the underground world across the United States, this site is not about the data. 
-              Instead, it’s a dedicated space for my <span className="text-slate-300">daily fragments</span>.
+              Instead, it’s a dedicated space for my <span className="text-slate-300">daily fragments</span> — the thoughts, the coffee-fueled breakthroughs, and the journey of a researcher behind the screen.
             </p>
           </div>
         </header>
@@ -57,7 +56,7 @@ export default function Home({ posts }) {
           
           {posts.length === 0 ? (
             <div className="py-10 text-center text-slate-700 text-xs italic font-mono">
-              No fragments found. Check Notion Status.
+              Connecting to Notion... (Ensure Status is "Done")
             </div>
           ) : (
             <div className="space-y-10">
@@ -75,7 +74,6 @@ export default function Home({ posts }) {
                     )}
                   </div>
                   
-                  {/* 點擊標題直接跳轉到該則 Notion 頁面 */}
                   <a href={post.url} target="_blank" rel="noopener noreferrer" className="block">
                     <h3 className="text-slate-100 font-medium text-lg leading-snug group-hover:text-white group-hover:underline decoration-emerald-500/30 transition-all">
                       {post.title}
@@ -87,8 +85,9 @@ export default function Home({ posts }) {
           )}
         </section>
 
+        {/* --- Footer Section --- */}
         <footer className="mt-40 pt-8 border-t border-slate-900 opacity-20 text-[9px] font-mono tracking-[0.4em] text-center uppercase">
-          System.Log // LSU_HYDRO_RESEARCH // 2026
+          SYSTEM.LOG // LSU_HYDROGEOLOGY_RESEARCH // 2026
         </footer>
       </div>
     </div>
@@ -96,7 +95,10 @@ export default function Home({ posts }) {
 }
 
 export async function getStaticProps() {
+  // 在函數內部初始化以避免編譯時的模組遺失
+  const { Client } = require("@notionhq/client");
   const notion = new Client({ auth: process.env.NOTION_TOKEN });
+
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_DATABASE_ID,
@@ -109,7 +111,7 @@ export async function getStaticProps() {
 
     const posts = response.results.map((page) => ({
       id: page.id,
-      url: page.public_url || `https://www.notion.so/${page.id.replace(/-/g, '')}`, // 產生直接跳轉連結
+      url: page.public_url || `https://www.notion.so/${page.id.replace(/-/g, '')}`,
       title: page.properties.Title?.title[0]?.plain_text || "Untitled",
       date: page.properties.Date?.date?.start || "2026",
       mood: page.properties.Mood?.rich_text[0]?.plain_text || "",
@@ -118,7 +120,7 @@ export async function getStaticProps() {
 
     return { props: { posts }, revalidate: 30 };
   } catch (error) {
-    console.error(error);
+    console.error("Notion SDK Error:", error);
     return { props: { posts: [] }, revalidate: 10 };
   }
 }
