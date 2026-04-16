@@ -2,47 +2,83 @@ import Head from 'next/head';
 
 export default function Home({ posts = [] }) {
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 font-sans p-8">
-      <Head><title>Eric K. | Digital Space</title></Head>
-      <div className="max-w-2xl mx-auto py-10">
-        <h1 className="text-4xl font-black text-white italic mb-12 tracking-tighter border-b-4 border-blue-600 inline-block">Eric K.</h1>
-        
-        <div className="relative border-l-2 border-slate-900 ml-3 space-y-16">
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-blue-500/30">
+      <Head>
+        <title>Eric K. | Fragments</title>
+      </Head>
+
+      <main className="max-w-2xl mx-auto py-24 px-8">
+        {/* Header: 極簡字體設計 */}
+        <header className="mb-24">
+          <h1 className="text-5xl font-black text-white italic tracking-tighter mb-4">
+            ERIC K<span className="text-blue-600">.</span>
+          </h1>
+          <p className="text-slate-500 font-mono text-[10px] tracking-[0.3em] uppercase">
+            Recording life between simulations.
+          </p>
+        </header>
+
+        {/* 日誌流: 垂直時間軸設計 */}
+        <div className="space-y-32 relative border-l border-slate-900/50 ml-4">
           {posts.length > 0 ? (
             posts.map((post) => (
-              <div key={post.id} className="relative pl-10">
-                <div className="absolute -left-[11px] top-2 w-5 h-5 bg-blue-600 rounded-full border-4 border-[#050505] shadow-[0_0_15px_rgba(37,99,235,0.4)]"></div>
+              <article key={post.id} className="relative pl-12 group">
+                {/* 裝飾圓點：滑鼠移入會發光 */}
+                <div className="absolute -left-[5px] top-2 w-2.5 h-2.5 bg-slate-800 rounded-full group-hover:bg-blue-600 group-hover:shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-all duration-500"></div>
                 
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-[11px] font-mono text-slate-500 uppercase tracking-widest">{post.date}</span>
+                {/* 日期與狀態 */}
+                <div className="flex items-center gap-4 mb-6 font-mono text-[10px] tracking-widest text-slate-600">
+                  <span className="bg-slate-900 px-2 py-0.5 rounded">{post.date}</span>
                   {post.status && (
-                    <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded font-bold uppercase">{post.status}</span>
+                    <span className="text-blue-500 opacity-70 uppercase">{post.status}</span>
                   )}
                 </div>
 
-                <h3 className="text-2xl text-white font-bold tracking-tight mb-4 leading-tight">{post.title}</h3>
-                
-                <div className="flex flex-wrap gap-3">
-                   {post.place && (
-                     <div className="flex items-center gap-1.5 text-xs text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-md border border-slate-800">
-                       <span>📍</span> {post.place}
-                     </div>
-                   )}
-                   {post.mood && (
-                     <div className="flex items-center gap-1.5 text-xs text-blue-400 bg-blue-500/5 px-3 py-1.5 rounded-md border border-blue-500/20 italic">
-                       <span>#</span> {post.mood}
-                     </div>
-                   )}
+                {/* 標題：大膽的排版 */}
+                <h2 className="text-3xl font-bold text-white mb-8 tracking-tight group-hover:text-blue-400 transition-colors duration-300">
+                  {post.title}
+                </h2>
+
+                {/* 內文：加入首字放大與優雅的行距 */}
+                {post.content && (
+                  <div className="mb-10">
+                    <p className="text-lg text-slate-400 leading-relaxed font-serif italic border-l-4 border-slate-900 pl-6 py-2">
+                      {post.content}
+                    </p>
+                  </div>
+                )}
+
+                {/* 地點與心情：美式工業風標籤 */}
+                <div className="flex flex-wrap gap-6 pt-6 border-t border-slate-900/30">
+                  {post.place && (
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-slate-600 font-bold uppercase mb-1">Location</span>
+                      <span className="text-xs text-slate-500 font-mono">@ {post.place}</span>
+                    </div>
+                  )}
+                  {post.mood && (
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-slate-600 font-bold uppercase mb-1">Current Mood</span>
+                      <span className="text-xs text-blue-500/70 font-mono"># {post.mood}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </article>
             ))
           ) : (
-            <div className="pl-10 text-slate-700 text-sm font-mono italic animate-pulse">
-              // NO FRAGMENTS FOUND. PLEASE CHECK IF NOTION COLUMNS ARE CORRECT. //
+            <div className="pl-12 text-slate-800 font-mono text-sm italic tracking-widest animate-pulse">
+              // SYNCING_NOTION_CORE...
             </div>
           )}
         </div>
-      </div>
+
+        {/* Footer */}
+        <footer className="mt-48 pt-12 border-t border-slate-900/50">
+          <p className="text-[10px] font-mono text-slate-700 uppercase tracking-[0.4em] text-center">
+            Sentimental Researcher Series © 2026
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }
@@ -59,31 +95,25 @@ export async function getStaticProps() {
     });
 
     const data = await res.json();
-    if (!data.results || data.results.length === 0) return { props: { posts: [] }, revalidate: 1 };
+    if (!data.results) return { props: { posts: [] }, revalidate: 10 };
 
     const posts = data.results.map((page) => {
       const p = page.properties;
-      
-      // 【終極相容邏輯】：自動尋找各種類型的欄位
-      const findProp = (type) => Object.values(p).find(prop => prop.type === type);
-      
+      const getRichText = (name) => p[name]?.rich_text?.[0]?.plain_text || "";
+
       return {
         id: page.id,
-        // 抓取 Title 類型的欄位
-        title: findProp('title')?.title?.[0]?.plain_text || "Untitled",
-        // 抓取 Date 類型的欄位
-        date: findProp('date')?.date?.start || "2026-04-15",
-        // 抓取 Place (Rich Text)
-        place: p.Place?.rich_text?.[0]?.plain_text || p.place?.rich_text?.[0]?.plain_text || "",
-        // 抓取 Mood (Rich Text)
-        mood: p.Mood?.rich_text?.[0]?.plain_text || p.mood?.rich_text?.[0]?.plain_text || "",
-        // 抓取 Status (Status)
-        status: p.Status?.status?.name || p.status?.status?.name || ""
+        title: p.Title?.title?.[0]?.plain_text || p.Name?.title?.[0]?.plain_text || "Untitled",
+        date: p.Date?.date?.start || "",
+        content: getRichText('Content') || getRichText('content'),
+        mood: getRichText('Mood') || getRichText('mood'),
+        place: getRichText('Place') || getRichText('place'),
+        status: p.Status?.status?.name || ""
       };
     });
 
-    return { props: { posts }, revalidate: 1 };
+    return { props: { posts }, revalidate: 10 };
   } catch (err) {
-    return { props: { posts: [] }, revalidate: 1 };
+    return { props: { posts: [] }, revalidate: 10 };
   }
 }
