@@ -1,96 +1,44 @@
 import Head from 'next/head';
 
-export default function Home({ posts = [] }) {
+export default function Home({ posts = [], rawData = null }) {
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-blue-500/30">
-      <Head>
-        <title>Eric K. | Fragments</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans p-8">
+      <Head><title>Eric K. | Debug Mode</title></Head>
+      <main className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold text-white mb-8 italic">System Debugging...</h1>
+        
+        {/* 如果抓不到資料，顯示原始回傳內容供診斷 */}
+        {posts.length === 0 && (
+          <div className="bg-slate-900 border border-blue-900/50 p-6 rounded-lg font-mono text-xs">
+            <p className="text-blue-400 mb-4">// NOTION API RAW RESPONSE //</p>
+            <pre className="overflow-auto text-slate-500 max-h-96">
+              {JSON.stringify(rawData, null, 2)}
+            </pre>
+          </div>
+        )}
 
-      <main className="max-w-2xl mx-auto py-20 px-8">
-        <header className="mb-24">
-          <h1 className="text-6xl font-black text-white italic tracking-tighter mb-4">
-            ERIC K<span className="text-blue-600">.</span>
-          </h1>
-          <p className="text-slate-500 font-mono text-[10px] tracking-[0.4em] uppercase opacity-70">
-            Recording life between simulations. No data, just fragments.
-          </p>
-        </header>
-
-        <div className="space-y-32 relative border-l border-slate-900/50 ml-4">
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <article key={post.id} className="relative pl-12 group">
-                {/* 裝飾點 */}
-                <div className="absolute -left-[5.5px] top-2 w-2.5 h-2.5 bg-slate-800 rounded-full group-hover:bg-blue-600 group-hover:shadow-[0_0_20px_rgba(37,99,235,0.8)] transition-all duration-500"></div>
-                
-                {/* 日期 */}
-                <div className="flex items-center gap-4 mb-6 font-mono text-[10px] tracking-widest text-slate-600 uppercase">
-                  <span className="bg-slate-900/80 px-2 py-1 rounded border border-slate-800/50">
-                    {post.date}
-                  </span>
-                </div>
-
-                {/* 標題 */}
-                <h2 className="text-3xl font-bold text-white mb-8 tracking-tight group-hover:text-blue-400 transition-colors">
-                  {post.title}
-                </h2>
-
-                {/* 內文 */}
-                {post.content && (
-                  <div className="mb-10 text-xl text-slate-400 leading-relaxed font-serif italic border-l-4 border-slate-900/80 pl-8 py-3 bg-gradient-to-r from-slate-900/10 to-transparent">
-                    {post.content}
-                  </div>
-                )}
-
-                {/* 標籤區 */}
-                <div className="flex flex-wrap gap-10 pt-8 border-t border-slate-900/40">
-                  {post.place && (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] text-slate-600 font-black uppercase tracking-tighter">Location</span>
-                      <span className="text-xs text-slate-500 font-mono italic">@ {post.place}</span>
-                    </div>
-                  )}
-                  {post.mood && (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] text-slate-600 font-black uppercase tracking-tighter">Current Mood</span>
-                      <span className="text-xs text-blue-500/60 font-mono italic"># {post.mood}</span>
-                    </div>
-                  )}
-                </div>
-              </article>
-            ))
-          ) : (
-            <div className="pl-12 py-20 text-slate-800 font-mono text-sm italic tracking-[0.2em] animate-pulse uppercase">
-              // DATA LINK ACTIVE. WAITING FOR FRAGMENTS... //
+        <div className="mt-12 space-y-8">
+          {posts.map((post) => (
+            <div key={post.id} className="border-l-2 border-blue-600 pl-6">
+              <h2 className="text-xl font-bold text-white">{post.title}</h2>
+              <p className="text-slate-500 text-sm">{post.date}</p>
+              <p className="mt-4 text-slate-300">{post.content}</p>
             </div>
-          )}
+          ))}
         </div>
-
-        <footer className="mt-56 pt-16 border-t border-slate-900/50 text-center">
-          <p className="text-[9px] font-mono text-slate-700 uppercase tracking-[0.5em]">
-            Sentimental Researcher Series © 2026
-          </p>
-        </footer>
+        
+        <p className="mt-12 text-[10px] text-slate-700 font-mono">
+          If "results" is [], check if your Notion row is EMPTY or FILTERED.
+        </p>
       </main>
     </div>
   );
 }
 
 export async function getServerSideProps({ res }) {
-  // 強制 Vercel 不要快取這一頁，實現「即時同步」
-  res.setHeader(
-    'Cache-Control',
-    'no-store, no-cache, must-revalidate, proxy-revalidate'
-  );
-
+  res.setHeader('Cache-Control', 'no-store');
   const databaseId = process.env.NOTION_DATABASE_ID;
   const token = process.env.NOTION_TOKEN;
-
-  if (!databaseId || !token) {
-    return { props: { posts: [] } };
-  }
 
   try {
     const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
@@ -100,48 +48,27 @@ export async function getServerSideProps({ res }) {
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json',
       },
-      // 排序：確保最新日期在最上面
-      body: JSON.stringify({
-        sorts: [{ property: 'Date', direction: 'descending' }]
-      }),
     });
 
     const data = await response.json();
 
+    // 如果沒有 results，把整個 data 丟給前端看
     if (!data.results || data.results.length === 0) {
-      return { props: { posts: [] } };
+      return { props: { posts: [], rawData: data } };
     }
 
     const posts = data.results.map((page) => {
       const p = page.properties;
-      
-      // 輔助函式：安全抓取 Text
-      const getRichText = (name) => {
-        const prop = p[name] || p[name.toLowerCase()];
-        return prop?.rich_text?.[0]?.plain_text || "";
-      };
-
-      // 抓取 Title (通常是第一個欄位)
-      const titleProp = Object.values(p).find(v => v.type === 'title');
-      const title = titleProp?.title?.[0]?.plain_text || "Untitled";
-
-      // 抓取 Date
-      const dateProp = Object.values(p).find(v => v.type === 'date');
-      const date = dateProp?.date?.start || "2026-04-16";
-
       return {
         id: page.id,
-        title: title,
-        date: date,
-        content: getRichText('Content'),
-        mood: getRichText('Mood'),
-        place: getRichText('Place')
+        title: p.Title?.title?.[0]?.plain_text || p.Name?.title?.[0]?.plain_text || "Untitled",
+        date: p.Date?.date?.start || "N/A",
+        content: p.Content?.rich_text?.[0]?.plain_text || "",
       };
     });
 
-    return { props: { posts } };
+    return { props: { posts, rawData: data } };
   } catch (err) {
-    console.error("API Error:", err);
-    return { props: { posts: [] } };
+    return { props: { posts: [], rawData: { error: err.message } } };
   }
 }
