@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import Head from 'next/head';
 
 export default function Home() {
@@ -14,7 +15,8 @@ export default function Home() {
           <h1 className="text-6xl font-black text-white italic tracking-tighter mb-4 animate-pulse">
             ERIC K<span className="text-blue-600">.</span>
           </h1>
-          <p className="text-slate-500 font-mono text-xs tracking-[0.3em] uppercase opacity-70">
+          {/* 【修改 1】提升 Slogan 的透明度，讓它更清晰 */}
+          <p className="text-slate-500 font-mono text-xs tracking-[0.3em] uppercase opacity-90">
             Recording life between simulations.
           </p>
         </header>
@@ -34,15 +36,19 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="mt-20 grid grid-cols-3 gap-4 opacity-20 font-mono text-[8px] uppercase tracking-widest text-blue-500">
+        {/* 【修改 2】大幅提升 Meta Tags (關鍵字) 的清晰度 */}
+        {/* 原本 text-blue-500 opacity-20 改為 text-slate-400 opacity-100 */}
+        <div className="mt-20 grid grid-cols-3 gap-4 font-mono text-[8px] uppercase tracking-widest text-slate-400 opacity-100">
             <span>Groundwater</span>
             <span>Simulation</span>
             <span>Baton Rouge</span>
         </div>
       </main>
 
-      <footer className="fixed bottom-8 text-[10px] text-slate-800 font-mono uppercase tracking-widest">
-        &copy; 2026 // Eric Cheng-Wei Kuo
+      {/* 【修改 3】提升 Footer 版權宣告的清晰度 */}
+      {/* 原本 text-slate-800 改為 text-slate-600 */}
+      <footer className="fixed bottom-8 text-[10px] text-slate-600 font-mono uppercase tracking-widest">
+        &copy; 2026 // ERIC CHENG-WEI KUO
       </footer>
     </div>
   );
