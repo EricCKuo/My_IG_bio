@@ -19,7 +19,7 @@ export default function Home({ posts = [] }) {
         </header>
 
         <div className="space-y-32 relative border-l border-slate-900/50 ml-4">
-          {posts.length > 0 ? (
+          {posts && posts.length > 0 ? (
             posts.map((post) => (
               <article key={post.id} className="relative pl-12 group">
                 <div className="absolute -left-[5.5px] top-2 w-2.5 h-2.5 bg-slate-800 rounded-full group-hover:bg-blue-600 group-hover:shadow-[0_0_20px_rgba(37,99,235,0.8)] transition-all duration-500"></div>
@@ -58,21 +58,32 @@ export default function Home({ posts = [] }) {
             ))
           ) : (
             <div className="pl-12 py-20 text-slate-800 font-mono text-sm italic tracking-[0.2em] animate-pulse uppercase">
-              // NO FRAGMENTS FOUND. PLEASE ENSURE NOTION CONNECTION IS ACTIVE //
+              // NO DATA FOUND. CHECK NOTION CONNECTION & DATABASE CONTENT //
             </div>
           )}
         </div>
+
+        <footer className="mt-56 pt-16 border-t border-slate-900/50 text-center text-[9px] font-mono text-slate-700 uppercase tracking-[0.5em]">
+          Sentimental Researcher Series © 2026
+        </footer>
       </main>
     </div>
   );
 }
 
 export async function getServerSideProps() {
+  const databaseId = process.env.NOTION_DATABASE_ID;
+  const token = process.env.NOTION_TOKEN;
+
+  if (!databaseId || !token) {
+    return { props: { posts: [] } };
+  }
+
   try {
-    const res = await fetch(`https://api.notion.com/v1/databases/${process.env.NOTION_DATABASE_ID}/query`, {
+    const res = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.NOTION_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Notion-Version': '2022-06-28',
         'Content-Type': 'application/json',
       },
@@ -80,30 +91,32 @@ export async function getServerSideProps() {
 
     const data = await res.json();
 
-    if (!data.results || data.results.length === 0) {
-      return { props: { posts: [] } };
-    }
+    if (!data.results) return { props: { posts: [] } };
 
     const posts = data.results.map((page) => {
       const p = page.properties;
       
-      // 改用最原始的方式抓取 Text
-      const getVal = (name) => {
-        const prop = p[name];
-        if (!prop) return "";
-        // 兼容 Title 類型和 Rich Text 類型
-        if (prop.type === 'title') return prop.title?.[0]?.plain_text || "";
-        if (prop.type === 'rich_text') return prop.rich_text?.[0]?.plain_text || "";
-        return "";
+      // 暴力提取函數：遍歷所有屬性，找到第一個有內容的文字欄位
+      const extractText = (propertyName) => {
+        const prop = p[propertyName] || Object.values(p).find(v => v.type === 'rich_text' && v.rich_text?.length > 0);
+        return prop?.rich_text?.[0]?.plain_text || "";
       };
+
+      // 提取標題
+      const titleProp = Object.values(p).find(v => v.type === 'title');
+      const title = titleProp?.title?.[0]?.plain_text || "Untitled Fragment";
+
+      // 提取日期
+      const dateProp = Object.values(p).find(v => v.type === 'date');
+      const date = dateProp?.date?.start || "2026-04-16";
 
       return {
         id: page.id,
-        title: getVal('Title') || getVal('Name') || "Untitled",
-        date: p.Date?.date?.start || "2026-04-16",
-        content: getVal('Content'),
-        mood: getVal('Mood'),
-        place: getVal('Place')
+        title: title,
+        date: date,
+        content: p.Content?.rich_text?.[0]?.plain_text || p.content?.rich_text?.[0]?.plain_text || "",
+        mood: p.Mood?.rich_text?.[0]?.plain_text || p.mood?.rich_text?.[0]?.plain_text || "",
+        place: p.Place?.rich_text?.[0]?.plain_text || p.place?.rich_text?.[0]?.plain_text || "",
       };
     });
 
