@@ -42,7 +42,7 @@ export default function Home() {
       </main>
 
       <footer className="fixed bottom-8 text-[10px] text-slate-800 font-mono uppercase tracking-widest">
-        &copy; 2026 // LSU Research Project
+        &copy; 2026 // Eric Cheng-Wei Kuo
       </footer>
     </div>
   );
