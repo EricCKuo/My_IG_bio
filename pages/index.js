@@ -1,6 +1,6 @@
 import Head from 'next/head';
 
-export default function Home({ posts }) {
+export default function Home({ posts = [] }) {
   return (
     <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-blue-500/30">
       <Head>
@@ -14,12 +14,12 @@ export default function Home({ posts }) {
             ERIC K<span className="text-blue-600">.</span>
           </h1>
           <p className="text-slate-500 font-mono text-[10px] tracking-[0.4em] uppercase opacity-70">
-            Recording life between simulations.
+            Recording life between simulations. No data, just fragments.
           </p>
         </header>
 
         <div className="space-y-32 relative border-l border-slate-900/50 ml-4">
-          {posts && posts.length > 0 ? (
+          {posts.length > 0 ? (
             posts.map((post) => (
               <article key={post.id} className="relative pl-12 group">
                 <div className="absolute -left-[5.5px] top-2 w-2.5 h-2.5 bg-slate-800 rounded-full group-hover:bg-blue-600 group-hover:shadow-[0_0_20px_rgba(37,99,235,0.8)] transition-all duration-500"></div>
@@ -58,14 +58,10 @@ export default function Home({ posts }) {
             ))
           ) : (
             <div className="pl-12 py-20 text-slate-800 font-mono text-sm italic tracking-[0.2em] animate-pulse uppercase">
-              // STANDBY: WAITING FOR NOTION DATA... //
+              // NO FRAGMENTS FOUND. PLEASE ENSURE NOTION CONNECTION IS ACTIVE //
             </div>
           )}
         </div>
-
-        <footer className="mt-56 pt-16 border-t border-slate-900/50 text-center text-[9px] font-mono text-slate-700 uppercase tracking-[0.5em]">
-          Sentimental Researcher Series © 2026
-        </footer>
       </main>
     </div>
   );
@@ -84,34 +80,34 @@ export async function getServerSideProps() {
 
     const data = await res.json();
 
-    if (!data.results) {
+    if (!data.results || data.results.length === 0) {
       return { props: { posts: [] } };
     }
 
     const posts = data.results.map((page) => {
       const p = page.properties;
       
-      // 安全抓取文字的輔助函式
-      const safeGet = (field) => {
-        const target = p[field] || p[field.toLowerCase()] || p[Object.keys(p).find(k => k.toLowerCase() === field.toLowerCase())];
-        return target?.rich_text?.[0]?.plain_text || target?.title?.[0]?.plain_text || "";
+      // 改用最原始的方式抓取 Text
+      const getVal = (name) => {
+        const prop = p[name];
+        if (!prop) return "";
+        // 兼容 Title 類型和 Rich Text 類型
+        if (prop.type === 'title') return prop.title?.[0]?.plain_text || "";
+        if (prop.type === 'rich_text') return prop.rich_text?.[0]?.plain_text || "";
+        return "";
       };
-
-      // 抓取日期
-      const dateProp = Object.values(p).find(v => v.type === 'date');
-      const date = dateProp?.date?.start || "2026-04-16";
 
       return {
         id: page.id,
-        title: safeGet('Title') || safeGet('Name') || "Untitled",
-        date: date,
-        content: safeGet('Content'),
-        mood: safeGet('Mood'),
-        place: safeGet('Place')
+        title: getVal('Title') || getVal('Name') || "Untitled",
+        date: p.Date?.date?.start || "2026-04-16",
+        content: getVal('Content'),
+        mood: getVal('Mood'),
+        place: getVal('Place')
       };
     });
 
-    return { props: { posts: posts || [] } };
+    return { props: { posts } };
   } catch (error) {
     return { props: { posts: [] } };
   }
