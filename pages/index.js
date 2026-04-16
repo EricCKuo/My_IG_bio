@@ -1,39 +1,49 @@
 import Head from 'next/head';
 
 export default function Home() {
-  // 這是你的 Notion 公開網址
   const notionUrl = "https://super-cairnsmore-e1d.notion.site/342028cc25a180cb8648f42782219809?v=342028cc25a180379be8000c45793982";
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans">
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans flex flex-col justify-center items-center p-6">
       <Head>
         <title>Eric K. | Fragments</title>
       </Head>
 
-      <main className="max-w-5xl mx-auto py-12 px-4 sm:px-6">
-        <header className="mb-10 text-center sm:text-left">
-          <h1 className="text-4xl font-black text-white italic tracking-tighter mb-2">
+      <main className="max-w-2xl w-full text-center">
+        <header className="mb-16">
+          <h1 className="text-6xl font-black text-white italic tracking-tighter mb-4 animate-pulse">
             ERIC K<span className="text-blue-600">.</span>
           </h1>
-          <p className="text-slate-500 font-mono text-[10px] tracking-[0.2em] uppercase opacity-70">
-            Recording life between simulations. No data, just fragments.
+          <p className="text-slate-500 font-mono text-xs tracking-[0.3em] uppercase opacity-70">
+            Recording life between simulations.
           </p>
         </header>
 
-        {/* 容器：加入圓角與陰影 */}
-        <div className="relative w-full rounded-2xl overflow-hidden border border-slate-800 bg-[#0f0f0f] shadow-2xl">
-          {/* 使用 iframe-container 技巧確保高度適中 */}
-          <iframe 
-            src={notionUrl}
-            className="w-full h-[700px] border-none"
-            allowFullScreen
-          ></iframe>
+        <div className="space-y-8">
+          <p className="text-lg text-slate-400 font-serif italic leading-relaxed">
+            "No data, just fragments of a researcher's journey."
+          </p>
+
+          <a 
+            href={notionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative inline-flex items-center justify-center px-8 py-4 font-mono font-bold text-white transition-all duration-200 bg-blue-600 font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+          >
+            ENTER THE FRAGMENTS →
+          </a>
         </div>
 
-        <footer className="mt-12 text-[10px] text-slate-800 font-mono text-center uppercase tracking-widest">
-          &copy; 2026 Eric Kuo // All fragments reserved.
-        </footer>
+        <div className="mt-20 grid grid-cols-3 gap-4 opacity-20 font-mono text-[8px] uppercase tracking-widest text-blue-500">
+            <span>Groundwater</span>
+            <span>Simulation</span>
+            <span>Baton Rouge</span>
+        </div>
       </main>
+
+      <footer className="fixed bottom-8 text-[10px] text-slate-800 font-mono uppercase tracking-widest">
+        &copy; 2026 // LSU Research Project
+      </footer>
     </div>
   );
 }
