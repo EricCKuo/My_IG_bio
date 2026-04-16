@@ -1,44 +1,41 @@
-import Head from 'next/head';
-
-export default function Home({ posts = [], rawData = null }) {
-  return (
-    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans p-8">
-      <Head><title>Eric K. | Debug Mode</title></Head>
-      <main className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-8 italic">System Debugging...</h1>
-        
-        {/* 如果抓不到資料，顯示原始回傳內容供診斷 */}
-        {posts.length === 0 && (
-          <div className="bg-slate-900 border border-blue-900/50 p-6 rounded-lg font-mono text-xs">
-            <p className="text-blue-400 mb-4">// NOTION API RAW RESPONSE //</p>
-            <pre className="overflow-auto text-slate-500 max-h-96">
-              {JSON.stringify(rawData, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        <div className="mt-12 space-y-8">
-          {posts.map((post) => (
-            <div key={post.id} className="border-l-2 border-blue-600 pl-6">
-              <h2 className="text-xl font-bold text-white">{post.title}</h2>
-              <p className="text-slate-500 text-sm">{post.date}</p>
-              <p className="mt-4 text-slate-300">{post.content}</p>
-            </div>
-          ))}
+export default function Home({ posts, error, debug }) {
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-red-500 p-10 font-mono">
+        <h1 className="text-2xl mb-4">🚨 Connection Failed</h1>
+        <p className="bg-red-900/20 p-4 border border-red-900 rounded">{error}</p>
+        <div className="mt-10 text-slate-500">
+          <p>Debug Info:</p>
+          <pre className="text-xs mt-2 bg-slate-900 p-4">{JSON.stringify(debug, null, 2)}</pre>
         </div>
-        
-        <p className="mt-12 text-[10px] text-slate-700 font-mono">
-          If "results" is [], check if your Notion row is EMPTY or FILTERED.
-        </p>
-      </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#050505] text-white p-10">
+      <h1 className="text-4xl font-black mb-10 italic">ERIC K<span className="text-blue-600">.</span></h1>
+      <div className="space-y-10">
+        {posts && posts.map(post => (
+          <div key={post.id} className="border-l-2 border-blue-600 pl-6">
+            <h2 className="text-2xl font-bold">{post.title}</h2>
+            <p className="text-slate-400 mt-2">{post.content}</p>
+          </div>
+        ))}
+        {(!posts || posts.length === 0) && <p className="text-slate-600 italic">// NO DATA IN DATABASE //</p>}
+      </div>
     </div>
   );
 }
 
-export async function getServerSideProps({ res }) {
-  res.setHeader('Cache-Control', 'no-store');
-  const databaseId = process.env.NOTION_DATABASE_ID;
-  const token = process.env.NOTION_TOKEN;
+export async function getServerSideProps() {
+  const databaseId = process.env.NOTION_DATABASE_ID?.trim();
+  const token = process.env.NOTION_TOKEN?.trim();
+
+  // 1. 檢查變數是否存在
+  if (!databaseId || !token) {
+    return { props: { error: `Missing Variables. ID: ${databaseId ? 'YES' : 'NO'}, Token: ${token ? 'YES' : 'NO'}` } };
+  }
 
   try {
     const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
@@ -52,23 +49,21 @@ export async function getServerSideProps({ res }) {
 
     const data = await response.json();
 
-    // 如果沒有 results，把整個 data 丟給前端看
-    if (!data.results || data.results.length === 0) {
-      return { props: { posts: [], rawData: data } };
+    // 2. 檢查 Notion API 是否報錯
+    if (data.object === 'error') {
+      return { props: { error: `Notion API Error: ${data.message}`, debug: data } };
     }
 
-    const posts = data.results.map((page) => {
-      const p = page.properties;
-      return {
-        id: page.id,
-        title: p.Title?.title?.[0]?.plain_text || p.Name?.title?.[0]?.plain_text || "Untitled",
-        date: p.Date?.date?.start || "N/A",
-        content: p.Content?.rich_text?.[0]?.plain_text || "",
-      };
-    });
+    // 3. 處理資料
+    const posts = data.results?.map((page) => ({
+      id: page.id,
+      title: page.properties.Title?.title?.[0]?.plain_text || page.properties.Name?.title?.[0]?.plain_text || "Untitled",
+      content: page.properties.Content?.rich_text?.[0]?.plain_text || "No Content",
+    })) || [];
 
-    return { props: { posts, rawData: data } };
+    return { props: { posts, debug: { status: response.status, results_count: data.results?.length } } };
   } catch (err) {
-    return { props: { posts: [], rawData: { error: err.message } } };
+    // 4. 捕捉網路或語法錯誤
+    return { props: { error: `Fetch Exception: ${err.message}` } };
   }
 }
